@@ -1,0 +1,2 @@
+Region,Subregion,Country,State/Province,Project Name,Latitude,Longitude,Location accuracy,Project_phase,Project_scale,Technology Type,Start year,Estimated_start_year,Capacity (MW),Capacity Rating,Estimated_capacity(MWdc),Estimated land area(hectares/MW),Estimated spatial footprint(m²/MW)
+Europe,Western Europe,France,,Cestas solar farm,44.7262,-0.8077,exact,Active,Large,PV,2015,2015,300,MWp/dc,300,675,7500000
