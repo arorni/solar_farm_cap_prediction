@@ -15,6 +15,14 @@ It includes utilities for setting up a folder structure, creating configuration 
 
 ---
 
+## Pre-requisite
+
+Before using this tool, you need to register your email at the following link:
+[Register for CAMS Radiation Service](https://www.soda-pro.com/help/cams-services/cams-radiation-service/automatic-access)
+
+No API key is required; you simply need to provide your registered email address to fetch the CAMS data.
+
+---
 ## Installation
 
 1. Clone the repository:
