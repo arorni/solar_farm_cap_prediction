@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[92]:
+# In[1]:
 
 
 #Import required libraries
@@ -12,7 +12,7 @@ import json
 import os
 
 
-# In[84]:
+# In[2]:
 
 
 def load_config(file_path):
@@ -29,10 +29,11 @@ def load_config(file_path):
             config = json.load(json_file)
         return config
     except Exception as e:
-        print(f"Error occured: {e}")
+        print(f"load_config: Error occured: {e}")
+        raise
 
 
-# In[85]:
+# In[3]:
 
 
 def get_file_to_process(data_folder):
@@ -53,13 +54,13 @@ def get_file_to_process(data_folder):
         else:
             print("There is no datafile to process.")
             return None
-    except:
-        print(f"An error occured {e}")
-        return None       
+    except Exception as e:
+        print(f"get_file_to_process: Error occured: {e}")
+        raise   
    
 
 
-# In[86]:
+# In[4]:
 
 
 def fetch_cams_data(solar_data, start_date, end_date, email, identifier='mcclear', altitude=None, time_step='1h',
@@ -111,19 +112,20 @@ def fetch_cams_data(solar_data, start_date, end_date, email, identifier='mcclear
             cams_df = pd.concat([cams_df, data], ignore_index=True)
 
         except Exception as e:
-            print(f"Error processing record {idx} with latitude {latitude} and longitude {longitude}: {e}")
+            print(f"fetch_cams_data: Error processing record {idx} with latitude {latitude} and longitude {longitude}: {e}")
+            raise
 
     return cams_df
 
 
-# In[87]:
+# In[10]:
 
 
 def validate_output(output_data, start_date, end_date, time_step, output_folder):
     """
     Validates output data against expected row counts and saves a file in the results folder validation is successful.
 
-      Parameters:
+    Parameters:
         output_data (DataFrame): The processed output data to be validated.
         start_date (str): The start date of the data range in the format "YYYY-MM-DD".
         end_date (str): The end date of the data range in the format "YYYY-MM-DD".
@@ -137,44 +139,46 @@ def validate_output(output_data, start_date, end_date, time_step, output_folder)
     Returns:
         bool: Returns `True` if validation is successful and the file is saved.
     """
-    total_hours = 24
-    #'1min', '15min', '1h', '1d', '1M'
-    time_step_ref = {
-        "1min": 1, 
-        "15min":15, 
-        "1h": 60, 
-        "1M": None
-    }
-
-    unique_locations = output_data['Latitude'].nunique()
-
-    #Convert date string to datetime
-    start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
-    end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
-
-    if time_step == "1M":
-        exp_rows = (end_date.year - start_date.year)*12 + (end_date.month - start_date.month) + 1
-        exp_rows = exp_rows * unique_locations
-    else:
-        time_delta = ((end_date + datetime.timedelta(days=1)) - start_date).total_seconds() / 60
-        exp_rows = int(time_delta // time_step_ref[time_step])
-        exp_rows = exp_rows * unique_locations
-
-    if len(output_data) == exp_rows:
-        #If validation successful - Saving the processed data to csv file
-        cur_date = datetime.datetime.now().strftime("%Y-%m-%d")
-        output_file = f"{output_folder}\\processed_cams_data_{cur_date}.csv"
-        output_data.to_csv(output_file, index=False)
-        print(f"expected row count: {exp_rows} found rows: {len(output_data)}") 
-        print(f"Output validation successful. Output saved to: {output_file}")
-        return True
-    else:
-        raise ValueError(f"Expected row count: {exp_rows} but found rows {len(output_data)}")
-        return False
+    try:
         
+        total_hours = 24
+        #'1min', '15min', '1h', '1d', '1M'
+        time_step_ref = {
+            "1min": 1, 
+            "15min":15, 
+            "1h": 60, 
+            "1M": None
+        }
+    
+        unique_locations = output_data['Latitude'].nunique()
+    
+        #Convert date string to datetime
+        start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+        end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+    
+        if time_step == "1M":
+            exp_rows = (end_date.year - start_date.year)*12 + (end_date.month - start_date.month) + 1
+            exp_rows = exp_rows * unique_locations
+        else:
+            time_delta = ((end_date + datetime.timedelta(days=1)) - start_date).total_seconds() / 60
+            exp_rows = int(time_delta // time_step_ref[time_step])
+            exp_rows = exp_rows * unique_locations
+    
+        if len(output_data) == exp_rows:
+            #If validation successful - Saving the processed data to csv file
+            cur_date = datetime.datetime.now().strftime("%Y-%m-%d")
+            output_file = f"{output_folder}\\processed_cams_data_{cur_date}.csv"
+            output_data.to_csv(output_file, index=False)
+            print(f"expected row count: {exp_rows} found rows: {len(output_data)}") 
+            print(f"Output validation successful. Output saved to: {output_file}")
+            return True
+        else:
+            raise ValueError(f"Expected row count: {exp_rows}, but found {len(output_data)} rows.")
+    except Exception as e:
+        raise 
 
 
-# In[90]:
+# In[11]:
 
 
 def main():
@@ -196,7 +200,7 @@ def main():
         None
     """
     try:
-       #Load config file
+        #Load config file
         print(os.getcwd())
         config = load_config('config.json')
     
@@ -239,6 +243,8 @@ def main():
         cams_details = fetch_cams_data(solar_data, start_date=start_date, end_date=end_date, email=email, \
                                      identifier=sky_type, time_step=time_step, time_ref=time_reference, server=server_name, \
                                      timeout=timeout)
+        if (len(cams_details) == 0):
+            raise f"fetch_cams_data functions returned an empty dataframe"
     
         #Validate output 
         status = validate_output(cams_details, start_date, end_date, time_step, results_folder)
@@ -250,14 +256,21 @@ def main():
             os.rename(datafile, processed_file)
 
             
-    except Exception as e:
-        print(f"An error occured: {e}")
+    except Exception as ex:
+        print(f"Main: An error occured {ex}")
+        traceback.print_exc()
         
+
+
+# In[12]:
+
+
+if __name__ == "__main__":
+    main()
 
 
 # In[ ]:
 
 
-if __name__ == "__main__":
-    main()
+
 
